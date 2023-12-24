@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="TicTacToeApp">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tic Tac Toe</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #2c3e50;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+        color: #ecf0f1;
+      }
+
+      h1 {
+        color: #ecf0f1;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        grid-gap: 10px;
+        margin: 20px auto;
+        max-width: 320px;
+      }
+
+      .cell {
+        width: 100px;
+        height: 100px;
+        font-size: 2em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #ecf0f1;
+        background: linear-gradient(to bottom, #3498db, #2980b9);
+        color: #ecf0f1;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease;
+      }
+
+      .cell:hover {
+        background: linear-gradient(to bottom, #2980b9, #3498db);
+      }
+
+      .cell:active {
+        transform: scale(0.95);
+      }
+
+      p {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-top: 20px;
+      }
+
+      .winner {
+        color: #2ecc71;
+      }
+
+      .draw {
+        color: #e74c3c;
+      }
+
+      .ai-move {
+        background-color: #e74c3c !important;
+        animation: aiMoveAnimation 0.5s ease-in-out;
+      }
+
+      @keyframes aiMoveAnimation {
+        0% {
+          transform: scale(0);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      button {
+        font-size: 1em;
+        padding: 10px 20px;
+        margin-top: 20px;
+        background-color: #3498db;
+        color: #ecf0f1;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+    </style>
+  </head>
+  <body ng-controller="TicTacToeController">
+    <div style="height: 100px"></div>
+    <h1>Tic Tac Toe</h1>
+
+    <div>
+      <label for="level">Select Level:</label>
+      <select id="level" ng-model="currentLevel" ng-change="resetGame()">
+        <option value="easy">Easy</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
+
+    <div class="board">
+      <div
+        class="cell"
+        ng-repeat="cell in board track by $index"
+        ng-click="makeMove($index)"
+      >
+        {{ cell }}
+      </div>
+    </div>
+
+    <p ng-if="winner" class="winner">Player {{ winner }} wins!</p>
+    <p ng-if="!winner && moves === 9" class="draw">It's a draw!</p>
+
+    <button ng-click="resetGame()">Play Again</button>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script>
+      angular
+        .module("TicTacToeApp", [])
+        .controller("TicTacToeController", function ($scope, $timeout) {
+          $scope.board = Array(9).fill("");
+          $scope.currentPlayer = "X";
+          $scope.winner = null;
+          $scope.moves = 0;
+          $scope.currentLevel = "easy";
+
+          $scope.makeMove = function (index) {
+            if (!$scope.board[index] && !$scope.winner) {
+              $scope.board[index] = $scope.currentPlayer;
+              $scope.moves++;
+
+              if ($scope.checkWinner()) {
+                $scope.winner = $scope.currentPlayer;
+              } else if ($scope.moves === 9) {
+                // It's a draw
+              } else {
+                $scope.currentPlayer = $scope.currentPlayer === "X" ? "O" : "X";
+                if ($scope.currentPlayer === "O") {
+                  // Automatic player (AI) move after a short delay
+                  $timeout($scope.makeAIMove, 500);
+                }
+              }
+            }
+          };
+
+          $scope.makeAIMove = function () {
+            if ($scope.currentLevel === "easy") {
+              $scope.makeRandomMove();
+            } else if ($scope.currentLevel === "hard") {
+              $scope.makeHardMove();
+            }
+
+            if ($scope.checkWinner()) {
+              $scope.winner = "O";
+            } else if ($scope.moves === 9) {
+              // It's a draw
+            } else {
+              $scope.currentPlayer = "X";
+            }
+          };
+
+          $scope.makeRandomMove = function () {
+            // Simple AI: Make a random move
+            while (true) {
+              const randomIndex = Math.floor(Math.random() * 9);
+              if (!$scope.board[randomIndex]) {
+                $scope.board[randomIndex] = "O";
+                $scope.moves++;
+                break;
+              }
+            }
+          };
+
+          $scope.makeHardMove = function () {
+            // TODO: Implement a more advanced AI for the "Hard" level
+            // For simplicity, let's use the random move logic for now
+            $scope.makeRandomMove();
+          };
+
+          $scope.checkWinner = function () {
+            const lines = [
+              [0, 1, 2],
+              [3, 4, 5],
+              [6, 7, 8],
+              [0, 3, 6],
+              [1, 4, 7],
+              [2, 5, 8],
+              [0, 4, 8],
+              [2, 4, 6],
+            ];
+
+            for (let i = 0; i < lines.length; i++) {
+              const [a, b, c] = lines[i];
+              if (
+                $scope.board[a] &&
+                $scope.board[a] === $scope.board[b] &&
+                $scope.board[a] === $scope.board[c]
+              ) {
+                return true;
+              }
+            }
+
+            return false;
+          };
+
+          $scope.resetGame = function () {
+            $scope.board = Array(9).fill("");
+            $scope.currentPlayer = "X";
+            $scope.winner = null;
+            $scope.moves = 0;
+
+            if ($scope.currentPlayer === "O") {
+              // Automatic player (AI) move after a short delay
+              $timeout($scope.makeAIMove, 500);
+            }
+          };
+        });
+    </script>
+  </body>
+</html>
